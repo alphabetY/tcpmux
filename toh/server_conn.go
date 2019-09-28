@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coyove/common/sched"
+	"github.com/alphabetY/common/sched"
 )
 
 const (

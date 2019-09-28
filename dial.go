@@ -7,7 +7,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/coyove/common/rand"
+	"github.com/alphabetY/common/rand"
 )
 
 var MasterTimeout uint32 = 20

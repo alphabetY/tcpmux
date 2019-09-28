@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coyove/common/lru"
+	"github.com/alphabetY/common/lru"
 	"github.com/miekg/dns"
 )
 

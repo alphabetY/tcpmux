@@ -13,7 +13,7 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/coyove/common/rand"
+	"github.com/alphabetY/common/rand"
 )
 
 const (

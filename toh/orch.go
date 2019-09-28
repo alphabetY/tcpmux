@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/coyove/common/sched"
+	"github.com/alphabetY/common/sched"
 )
 
 func init() {
