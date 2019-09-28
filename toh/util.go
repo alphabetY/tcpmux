@@ -64,7 +64,8 @@ func vprint(v ...interface{}) {
 		return
 	}
 	strip := func(fn string) string {
-		return filepath.Base(fn)
+		fn = filepath.Base(fn)
+		return fn[:len(fn)-3] // ".go"
 	}
 
 	_, fn, line, _ := runtime.Caller(1)
@@ -76,9 +77,9 @@ func vprint(v ...interface{}) {
 	if !strings.HasSuffix(fn2, ".go") {
 		fmt.Println(fmt.Sprintf("%s %s:%d] ", now, strip(fn), line), str)
 	} else if fn == fn2 {
-		fmt.Println(fmt.Sprintf("%s %s:%d__%d] ", now, strip(fn), line2, line), str)
+		fmt.Println(fmt.Sprintf("%s %s:%d\u00bb%d] ", now, strip(fn), line2, line), str)
 	} else {
-		fmt.Println(fmt.Sprintf("%s %s:%d__%s:%d] ", now, strip(fn2), line2, strip(fn), line), str)
+		fmt.Println(fmt.Sprintf("%s %s:%d\u00bb%s:%d] ", now, strip(fn2), line2, strip(fn), line), str)
 	}
 }
 

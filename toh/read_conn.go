@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alphabetY/common/waitobject"
+	"github.com/coyove/common/waitobject"
 )
 
 var (

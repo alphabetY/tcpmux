@@ -9,11 +9,12 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"unsafe"
 
-	"github.com/alphabetY/common/rand"
+	"github.com/coyove/common/rand"
 )
 
 const (
@@ -31,17 +32,35 @@ const (
 	cmdPayload
 )
 
-const (
-	notifyRemoteClosed = 1 << iota
-	notifyClose
-	notifyCancel
-	notifyError
-	notifyReady
-)
+type notifyFlag byte
+
+func (nf notifyFlag) String() string {
+	p := bytes.Buffer{}
+	for i := 0; i < 8; i++ {
+		n := notifyFlag(1 << uint(i))
+		if nf&n > 0 {
+			switch n {
+			case notifyError:
+				p.WriteString("Error")
+			case notifyClose:
+				p.WriteString("Close")
+			case notifyAck:
+				p.WriteString("Ack")
+			case notifyReady:
+				p.WriteString("Ready")
+			default:
+				p.WriteString("Unknown")
+			}
+		}
+	}
+	return p.String()
+}
 
 const (
-	// OptErrWhenClosed lets Read() and Write() report ErrConnClosed when remote closed
-	OptErrWhenClosed = 1 << iota
+	notifyError notifyFlag = 1 << iota
+	notifyClose
+	notifyReady
+	notifyAck
 )
 
 var (
@@ -64,7 +83,7 @@ var (
 func (conn *connState) makeFrame(idx uint32, cmd byte, mask bool, payload []byte) []byte {
 	p := &bytes.Buffer{}
 
-	if cmd != 0 {
+	if cmd != cmdPayload {
 		buf := []byte{0, 0, 0, 0, 0, 0, 0, 0, cmd}
 		binary.BigEndian.PutUint32(buf[4:], idx)
 		binary.BigEndian.PutUint32(buf[:4], conn.Sum32(buf[4:], conn.key))
@@ -92,21 +111,6 @@ func (e *timeoutError) Timeout() bool { return true }
 
 func (e *timeoutError) Temporary() bool { return false }
 
-func clearCancel(queue chan byte) {
-	select {
-	case code := <-queue:
-		if code == notifyCancel {
-			return
-		}
-
-		select {
-		case queue <- code:
-		default:
-		}
-	default:
-	}
-}
-
 // Map32 is a mapping from uint32 to unsafe.Pointer
 type Map32 struct {
 	*sync.RWMutex
@@ -114,7 +118,7 @@ type Map32 struct {
 }
 
 // New creates a new Map32
-func (Map32) New() Map32 {
+func NewMap32() Map32 {
 	return Map32{RWMutex: new(sync.RWMutex), m: make(map[uint32]unsafe.Pointer)}
 }
 
@@ -201,12 +205,6 @@ func (sm *Map32) IterateConst(callback func(id uint32, s unsafe.Pointer) bool) {
 		}
 	}
 	sm.RUnlock()
-}
-
-func stacktrace() string {
-	x := make([]byte, 4096)
-	n := runtime.Stack(x, false)
-	return string(x[:n])
 }
 
 // WSWrite and WSRead are simple implementations of RFC6455
@@ -319,4 +317,29 @@ func sumHMACsha256(p, key []byte) uint32 {
 	h := hmac.New(sha256.New, key)
 	p = h.Sum(p)
 	return binary.BigEndian.Uint32(p[:4])
+}
+
+var debug = false
+
+func debugprint(v ...interface{}) {
+	if !debug {
+		return
+	} else {
+		//		time.Sleep(time.Millisecond * 100)
+		//return
+	}
+
+	src, i := bytes.Buffer{}, 1
+	for {
+		_, fn, line, ok := runtime.Caller(i)
+		if !ok {
+			break
+		}
+		i++
+		src.WriteString(fmt.Sprintf("%s:%d/", filepath.Base(fn), line))
+	}
+	if src.Len() > 0 {
+		src.Truncate(src.Len() - 1)
+	}
+	fmt.Println(src.String(), "]\n\t", fmt.Sprint(v...))
 }

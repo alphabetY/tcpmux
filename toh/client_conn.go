@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/alphabetY/common/sched"
+	"github.com/coyove/common/sched"
 )
 
 type ClientConn struct {
@@ -91,10 +91,6 @@ func (c *ClientConn) RemoteAddr() net.Addr {
 }
 
 func (c *ClientConn) Close() error {
-	if c.read.closed {
-		return nil
-	}
-
 	vprint(c, " closing")
 	c.write.sched.Cancel()
 	c.read.close()

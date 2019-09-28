@@ -9,7 +9,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/alphabetY/common/sched"
+	"github.com/coyove/common/sched"
 )
 
 const (
@@ -62,8 +62,6 @@ func parseframe(r io.ReadCloser, blk cipher.Block) (f frame, ok bool) {
 	if n, err := io.ReadAtLeast(r, header[:], len(header)); err != nil || n != len(header) {
 		if err == io.EOF {
 			ok = true
-		} else {
-			vprint(err)
 		}
 		return
 	}
@@ -73,21 +71,18 @@ func parseframe(r io.ReadCloser, blk cipher.Block) (f frame, ok bool) {
 
 	h := crc32.Checksum(header[:17], crc32.IEEETable)
 	if header[17] != byte(h) || header[18] != byte(h>>8) || header[19] != byte(h>>16) {
-		vprint(header)
 		return
 	}
 
 	datalen := int(binary.LittleEndian.Uint32(header[12:]))
 	data := make([]byte, datalen)
 	if n, err := io.ReadAtLeast(r, data, datalen); err != nil || n != datalen {
-		vprint(err)
 		return
 	}
 
 	gcm, err := cipher.NewGCM(blk)
 	data, err = gcm.Open(nil, header[:12], data, nil)
 	if err != nil {
-		vprint(err)
 		return
 	}
 

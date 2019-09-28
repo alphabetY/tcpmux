@@ -10,21 +10,21 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alphabetY/common/lru"
+	"github.com/coyove/common/lru"
 	"github.com/miekg/dns"
 )
 
 var (
 	DefaultResolver   string
 	defaultResolvermu sync.Mutex
-	DNSCache          = lru.NewCache(1024)
+	dnsCache          = lru.NewCache(1024)
 )
 
 func LookupIPv4(host string, local bool) (net.IP, error) {
 	if local {
 		return dnsNonRecursiveQueryIPv4(host)
 	}
-	if c, ok := DNSCache.Get(host); ok {
+	if c, ok := dnsCache.Get(host); ok {
 		return c.(net.IP), nil
 	}
 	ips, err := net.LookupIP(host)
@@ -34,7 +34,7 @@ func LookupIPv4(host string, local bool) (net.IP, error) {
 	for _, ip := range ips {
 		ip4 := ip.To4()
 		if ip4 != nil {
-			DNSCache.Add(host, ip4)
+			dnsCache.Add(host, ip4)
 			return ip4, nil
 		}
 	}
@@ -48,7 +48,7 @@ func dnsNonRecursiveQueryIPv4(host string) (net.IP, error) {
 	if !strings.HasSuffix(host, ".") {
 		host += "."
 	}
-	if c, ok := DNSCache.Get(host); ok {
+	if c, ok := dnsCache.Get(host); ok {
 		return c.(net.IP), nil
 	}
 
@@ -86,7 +86,7 @@ func dnsNonRecursiveQueryIPv4(host string) (net.IP, error) {
 	for _, ans := range in.Answer {
 		switch a := ans.(type) {
 		case *dns.A:
-			DNSCache.Add(host, a.A)
+			dnsCache.Add(host, a.A)
 			return a.A, nil
 		case *dns.CNAME:
 			return dnsNonRecursiveQueryIPv4(a.Target)

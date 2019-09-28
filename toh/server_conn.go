@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alphabetY/common/sched"
+	"github.com/coyove/common/sched"
 )
 
 const (
@@ -43,8 +43,6 @@ func newServerConn(idx uint64, ln *Listener) *ServerConn {
 }
 
 func (l *Listener) randomReply(w http.ResponseWriter, r *http.Request) {
-	vprint("listener random reply: ", r)
-
 	if l.OnBadRequest != nil {
 		l.OnBadRequest(w, r)
 		return
@@ -132,11 +130,7 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 		// New incoming connection?
 		f, ok := parseframe(r.Body, l.blk)
 		if !ok || f.options&optHello == 0 || f.connIdx != connIdx {
-			if !ok {
-				l.randomReply(w, r)
-			} else {
-				// TODO: tell client the conn has gone
-			}
+			l.randomReply(w, r)
 			l.connsmu.Unlock()
 			return
 		}
@@ -253,10 +247,6 @@ func (c *ServerConn) Read(p []byte) (n int, err error) {
 }
 
 func (c *ServerConn) Close() error {
-	if c.read.closed {
-		return nil
-	}
-
 	vprint("server: close conn: ", c)
 	c.schedPurge.Cancel()
 	c.read.close()
